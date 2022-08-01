@@ -102,18 +102,15 @@ def get_new_dates(start_date: datetime.datetime,end_date: datetime.datetime, per
         if x<=x_arr[i] and x>x_arr[i-1]:
             return y_arr[i-1]+((y_arr[i]-y_arr[i-1])/(x_arr[i]-x_arr[i-1]))*(x-x_arr[i-1])
 
-def get_required_columns(workbook, worksheet):
-  df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
+def get_required_columns(input_df: pd.DataFrame):
+  # df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
   columns_to_delete=[]
-  for tup in df.columns.values:
+  for tup in input_df.columns.values:
     if "CUM" not in tup[1]:
       columns_to_delete.append(tup)
-  # print(columns_to_delete)
   for col in columns_to_delete:
-    df.pop(col)
-  # if not df.empty:
-  #   print(df.head)
-  return df
+    input_df.pop(col)
+  return input_df
     
 def dates_bulk_shifted(input_dataframe,days_to_shift):
 
@@ -132,8 +129,6 @@ def dates_bulk_shifted(input_dataframe,days_to_shift):
   # for i in range(len(required_columns)):
   #   output_df.insert(i,i,numpy.interp(new_days_from_start,days_from_start,data_arrays[i]))
   sers = [pd.Series(numpy.interp(new_days_from_start,days_from_start,data_arrays[i])) for i in range(len(required_columns))]
-  # myst_obj=pd.concat(sers,axis=1)
-  # new_df=pd.DataFrame(myst_obj)
   output_df=pd.DataFrame(pd.concat(sers,axis=1))
   output_df.index=new_dates
   output_df.columns=pd.MultiIndex.from_tuples(required_columns)
@@ -146,8 +141,12 @@ def get_shift_duration(workbook):
   worksheets=wbk.sheetnames
   if 'Bulk_Shift_Input' in worksheets:
     first_row=next(wbk['Bulk_Shift_Input'].rows)
+    wbk.close()
+    del wbk
     return(first_row[1].value)
   else:
+    wbk.close()
+    del wbk
     return None
 
 
@@ -157,9 +156,11 @@ if shift_duration is None:
   exit()
 entity_types=['USERDF','SOURCE','SEP','TANK','JOINT','WELL','INLGEN']
 df_dict={}
+wbk=xl.load_workbook(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
 for entity_type in entity_types:
   df=pd.DataFrame()
-  df=get_required_columns(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx",entity_type)
+  df=pd.read_excel(wbk,sheet_name=entity_type,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
+  df=get_required_columns(df)
   if not df.empty:
     df=dates_bulk_shifted(df,shift_duration)
     df_dict[entity_type]=df
