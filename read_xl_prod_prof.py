@@ -111,75 +111,91 @@ def get_required_columns(workbook, worksheet):
   # print(columns_to_delete)
   for col in columns_to_delete:
     df.pop(col)
-  if not df.empty:
-    print(df.head)
+  # if not df.empty:
+  #   print(df.head)
+  return df
     
+def dates_bulk_shifted(input_dataframe,days_to_shift):
 
-
-def dates_bulk_shifted(workbook, worksheet,days_to_shift):
-  df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
-  req_df=pd.DataFrame(df.loc[slice(None),(slice(None),['CUMGAS','CUMOIL','CUMWAT'])])
-  del df
-  if req_df.empty:
-    return
-
-  required_columns=req_df.columns.values
-  data_values=req_df.values
+  required_columns=input_dataframe.columns.values
+  data_values=input_dataframe.values
   data_arrays=[[data_values[i,j] for i in range(len(data_values))] for j in range(len(required_columns))]
-  dates_list=req_df.index.values
+  dates_list=input_dataframe.index.values
 
   days_from_start=[(i-dates_list[0])/numpy.timedelta64(1,'D') for i in dates_list]
   new_dates=[j+numpy.timedelta64(days_to_shift,'D') for j in dates_list]
   new_days_from_start=[(i-new_dates[0])/numpy.timedelta64(1,'D') for i in new_dates]
   
   
-  output_df=pd.DataFrame()
+  # output_df=pd.DataFrame()
+  # output_df.index=new_dates
+  # for i in range(len(required_columns)):
+  #   output_df.insert(i,i,numpy.interp(new_days_from_start,days_from_start,data_arrays[i]))
+  sers = [pd.Series(numpy.interp(new_days_from_start,days_from_start,data_arrays[i])) for i in range(len(required_columns))]
+  # myst_obj=pd.concat(sers,axis=1)
+  # new_df=pd.DataFrame(myst_obj)
+  output_df=pd.DataFrame(pd.concat(sers,axis=1))
   output_df.index=new_dates
-  for i in range(len(required_columns)):
-    output_df.insert(i,i,numpy.interp(new_days_from_start,days_from_start,data_arrays[i]))
   output_df.columns=pd.MultiIndex.from_tuples(required_columns)
-  print(output_df.head)
+  # print(output_df.head)
 
   return output_df
 
+def get_shift_duration(workbook):
+  wbk=xl.load_workbook(workbook)
+  worksheets=wbk.sheetnames
+  if 'Bulk_Shift_Input' in worksheets:
+    first_row=next(wbk['Bulk_Shift_Input'].rows)
+    return(first_row[1].value)
+  else:
+    return None
 
 
 print("Hello World")
-
-get_required_columns(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx",'USERDF')
+shift_duration=get_shift_duration(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
+if shift_duration is None:
+  exit()
+entity_types=['USERDF','SOURCE','SEP','TANK','JOINT','WELL','INLGEN']
+df_dict={}
+for entity_type in entity_types:
+  df=pd.DataFrame()
+  df=get_required_columns(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx",entity_type)
+  if not df.empty:
+    df=dates_bulk_shifted(df,shift_duration)
+    df_dict[entity_type]=df
 exit()
 
 
-try:
-  workbook=xl.load_workbook(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
-  print(type(workbook))
-except Exception:
-  print('File not found')
-  exit()
-print(f'Workbook opened \n')
+# try:
+#   workbook=xl.load_workbook(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
+#   print(type(workbook))
+# except Exception:
+#   print('File not found')
+#   exit()
+# print(f'Workbook opened \n')
 
 
 # read bulk shift days from excel_input_sheet
-first_row=next(workbook['Bulk_Shift_Input'].rows)
-days_to_shift=first_row[1].value
-worksheets=workbook.sheetnames
+# first_row=next(workbook['Bulk_Shift_Input'].rows)
+# days_to_shift=first_row[1].value
+# worksheets=workbook.sheetnames
 # workbook.close()
-writer=pd.ExcelWriter(r"C:\Users\rdandekar\Desktop\Prod_Prof_shifted.xlsx",engine='openpyxl')
+# writer=pd.ExcelWriter(r"C:\Users\rdandekar\Desktop\Prod_Prof_shifted.xlsx",engine='openpyxl')
 # writer.book=workbook
 #for testing
-entity_types=['USERDF','SOURCE','SEP','TANK','JOINT','WELL','INLGEN']
-entity_dates=[]
+# entity_types=['USERDF','SOURCE','SEP','TANK','JOINT','WELL','INLGEN']
+# entity_dates=[]
 
 
-for entity_type in entity_types:
-  df=pd.DataFrame()
-  df=dates_bulk_shifted(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx",entity_type,days_to_shift)
-  if df is not None:
-    df.to_excel(writer,sheet_name=entity_type+"_shifted")
-writer.save()
-writer.close()
+# for entity_type in entity_types:
+#   df=pd.DataFrame()
+#   df=dates_bulk_shifted(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx",entity_type,days_to_shift)
+#   if df is not None:
+#     df.to_excel(writer,sheet_name=entity_type+"_shifted")
+# writer.save()
+# writer.close()
 
-workbook.save()
-workbook.close()
-print("I am here")
+# workbook.save()
+# workbook.close()
+# print("I am here")
 
