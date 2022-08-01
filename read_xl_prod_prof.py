@@ -92,6 +92,16 @@ def get_new_dates(start_date: datetime.datetime,end_date: datetime.datetime, per
     return dates      
 
 
+def lin_int(x_arr,y_arr,x):
+    if x<=x_arr[0]:
+        return y_arr[0]
+    if x>=x_arr[-1]:
+        return y_arr[-1]
+
+    for i in range(1,len(x_arr)-1):
+        if x<=x_arr[i] and x>x_arr[i-1]:
+            return y_arr[i-1]+((y_arr[i]-y_arr[i-1])/(x_arr[i]-x_arr[i-1]))*(x-x_arr[i-1])
+
 
 def dates_bulk_shifted(workbook, worksheet,days):
   df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True)
@@ -107,10 +117,11 @@ def dates_bulk_shifted(workbook, worksheet,days):
   print(dates_list.max(), dates_list.min())
   days_from_start=[(i-dates_list[0])/numpy.timedelta64(1,'D') for i in dates_list]
   for i in range(len(required_columns)):
-    combined_array=list(zip(days_from_start,data_arrays[i]))
+    shifted_values=[]
 
-  # new_dates=[datetime.datetime.utcfromtimestamp(i.tolist()/1e9)+datetime.timedelta(days=days_to_shift) for i in dates_list]
-  # dates_list=[datetime.datetime.utcfromtimestamp(i.tolist()/1e9) for i in dates_list]
+
+
+
 
 
 

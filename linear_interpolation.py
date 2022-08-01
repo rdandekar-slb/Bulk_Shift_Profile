@@ -19,6 +19,7 @@ data.append(y_values)
 
 
 
-unknowns=[3,41,19,94,62,62,89,13,20,56,46,30,23,98]
+# unknowns=[3,41,19,94,62,62,89,13,20,56,46,30,23,98]
+unknowns=[1,5,10,12,15,20,25,30,35,40,43,45,46,50,55,60,65,70,72,75,80,85]
 for unknown in unknowns:
     print(unknown, lin_int(x_values,y_values,unknown))
