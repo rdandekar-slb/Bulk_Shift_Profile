@@ -92,7 +92,6 @@ def get_new_dates(start_date: datetime.datetime,end_date: datetime.datetime, per
     return dates      
 
 
-def lin_int(x_arr,y_arr,x):
     if x<=x_arr[0]:
         return y_arr[0]
     if x>=x_arr[-1]:
@@ -103,7 +102,7 @@ def lin_int(x_arr,y_arr,x):
             return y_arr[i-1]+((y_arr[i]-y_arr[i-1])/(x_arr[i]-x_arr[i-1]))*(x-x_arr[i-1])
 
 
-def dates_bulk_shifted(workbook, worksheet,days):
+def dates_bulk_shifted(workbook, worksheet,days_to_shift):
   df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True)
   req_df=pd.DataFrame(df.loc[slice(None),(slice(None),['CUMGAS','CUMOIL','CUMWAT'])])
   del df
@@ -118,6 +117,13 @@ def dates_bulk_shifted(workbook, worksheet,days):
   days_from_start=[(i-dates_list[0])/numpy.timedelta64(1,'D') for i in dates_list]
   for i in range(len(required_columns)):
     shifted_values=[]
+    new_dates=[j+numpy.timedelta64(days_to_shift,'D') for j in dates_list]
+    new_days_from_start=[(i-new_dates[0])/numpy.timedelta64(1,'D') for i in new_dates]
+    # for new_day in new_days_from_start:
+    #    shifted_values.append(lin_int(days_from_start,data_arrays[i],new_day))
+    shifted_values=numpy.interp(new_days_from_start,days_from_start,data_arrays[i])
+      
+
 
 
 
