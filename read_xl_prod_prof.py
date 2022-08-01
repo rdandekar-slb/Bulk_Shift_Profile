@@ -102,6 +102,19 @@ def get_new_dates(start_date: datetime.datetime,end_date: datetime.datetime, per
         if x<=x_arr[i] and x>x_arr[i-1]:
             return y_arr[i-1]+((y_arr[i]-y_arr[i-1])/(x_arr[i]-x_arr[i-1]))*(x-x_arr[i-1])
 
+def get_required_columns(workbook, worksheet):
+  df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
+  columns_to_delete=[]
+  for tup in df.columns.values:
+    if "CUM" not in tup[1]:
+      columns_to_delete.append(tup)
+  # print(columns_to_delete)
+  for col in columns_to_delete:
+    df.pop(col)
+  if not df.empty:
+    print(df.head)
+    
+
 
 def dates_bulk_shifted(workbook, worksheet,days_to_shift):
   df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
@@ -132,6 +145,11 @@ def dates_bulk_shifted(workbook, worksheet,days_to_shift):
 
 
 print("Hello World")
+
+get_required_columns(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx",'USERDF')
+exit()
+
+
 try:
   workbook=xl.load_workbook(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
   print(type(workbook))
