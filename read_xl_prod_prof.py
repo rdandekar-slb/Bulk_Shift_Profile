@@ -1,5 +1,6 @@
 import openpyxl as xl
 import datetime
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 import numpy
 
@@ -103,7 +104,7 @@ def get_new_dates(start_date: datetime.datetime,end_date: datetime.datetime, per
 
 
 def dates_bulk_shifted(workbook, worksheet,days_to_shift):
-  df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True)
+  df=pd.read_excel(workbook,sheet_name=worksheet,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
   req_df=pd.DataFrame(df.loc[slice(None),(slice(None),['CUMGAS','CUMOIL','CUMWAT'])])
   del df
   if req_df.empty:
@@ -113,27 +114,27 @@ def dates_bulk_shifted(workbook, worksheet,days_to_shift):
   data_values=req_df.values
   data_arrays=[[data_values[i,j] for i in range(len(data_values))] for j in range(len(required_columns))]
   dates_list=req_df.index.values
-  print(dates_list.max(), dates_list.min())
+
   days_from_start=[(i-dates_list[0])/numpy.timedelta64(1,'D') for i in dates_list]
+  new_dates=[j+numpy.timedelta64(days_to_shift,'D') for j in dates_list]
+  new_days_from_start=[(i-new_dates[0])/numpy.timedelta64(1,'D') for i in new_dates]
+  
+  
+  output_df=pd.DataFrame()
+  output_df.index=new_dates
   for i in range(len(required_columns)):
-    shifted_values=[]
-    new_dates=[j+numpy.timedelta64(days_to_shift,'D') for j in dates_list]
-    new_days_from_start=[(i-new_dates[0])/numpy.timedelta64(1,'D') for i in new_dates]
-    # for new_day in new_days_from_start:
-    #    shifted_values.append(lin_int(days_from_start,data_arrays[i],new_day))
-    shifted_values=numpy.interp(new_days_from_start,days_from_start,data_arrays[i])
-      
+    output_df.insert(i,i,numpy.interp(new_days_from_start,days_from_start,data_arrays[i]))
+  output_df.columns=pd.MultiIndex.from_tuples(required_columns)
+  print(output_df.head)
 
-
-
-
-
+  return output_df
 
 
 
 print("Hello World")
 try:
-  workbook=xl.load_workbook(r"C:\Users\rdandekar\Desktop\ProductionProfile.xlsx")
+  workbook=xl.load_workbook(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
+  print(type(workbook))
 except Exception:
   print('File not found')
   exit()
@@ -144,14 +145,23 @@ print(f'Workbook opened \n')
 first_row=next(workbook['Bulk_Shift_Input'].rows)
 days_to_shift=first_row[1].value
 worksheets=workbook.sheetnames
-workbook.close()
-
+# workbook.close()
+writer=pd.ExcelWriter(r"C:\Users\rdandekar\Desktop\Prod_Prof_shifted.xlsx",engine='openpyxl')
+# writer.book=workbook
 #for testing
 entity_types=['USERDF','SOURCE','SEP','TANK','JOINT','WELL','INLGEN']
 entity_dates=[]
 
-for entity_type in entity_types:
-  dates_bulk_shifted(r"C:\Users\rdandekar\Desktop\ProductionProfile.xlsx",entity_type,days_to_shift)
 
+for entity_type in entity_types:
+  df=pd.DataFrame()
+  df=dates_bulk_shifted(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx",entity_type,days_to_shift)
+  if df is not None:
+    df.to_excel(writer,sheet_name=entity_type+"_shifted")
+writer.save()
+writer.close()
+
+workbook.save()
+workbook.close()
 print("I am here")
 
