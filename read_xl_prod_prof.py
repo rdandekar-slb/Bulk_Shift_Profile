@@ -122,19 +122,39 @@ def dates_bulk_shifted(input_dataframe,days_to_shift):
   days_from_start=[(i-dates_list[0])/numpy.timedelta64(1,'D') for i in dates_list]
   new_dates=[j+numpy.timedelta64(days_to_shift,'D') for j in dates_list]
   new_days_from_start=[(i-new_dates[0])/numpy.timedelta64(1,'D') for i in new_dates]
-  
-  
-  # output_df=pd.DataFrame()
-  # output_df.index=new_dates
-  # for i in range(len(required_columns)):
-  #   output_df.insert(i,i,numpy.interp(new_days_from_start,days_from_start,data_arrays[i]))
+
   sers = [pd.Series(numpy.interp(new_days_from_start,days_from_start,data_arrays[i])) for i in range(len(required_columns))]
+  sers_with_rates=get_rates_from_cum(sers,required_columns,new_days_from_start)
+
   output_df=pd.DataFrame(pd.concat(sers,axis=1))
   output_df.index=new_dates
   output_df.columns=pd.MultiIndex.from_tuples(required_columns)
   # print(output_df.head)
 
   return output_df
+
+def get_rates_from_cum(series,columns,days_from_start):
+  new_columns=[]
+  for i in range(len(columns)):
+    new_columns.append(columns[i])
+    rate_type="AVG._"+columns[i][1].replace('CUM','')+"_RATE"
+    new_columns.append((columns[i][0],rate_type))
+  
+  new_series=[]
+  for ser in series:
+    new_series.append(ser)
+    rate_series=[]
+    for i in range(len(ser)-1):
+      rate_series[i]=(ser[i+1]-ser[i])/(days_from_start[i+1]-days_from_start[i])
+    rate_series.append(0)
+    new_series.append(rate_series)
+  
+  return new_columns,new_series
+
+
+
+
+
 
 def get_shift_duration(workbook):
   wbk=xl.load_workbook(workbook)
@@ -161,9 +181,25 @@ for entity_type in entity_types:
   df=pd.DataFrame()
   df=pd.read_excel(wbk,sheet_name=entity_type,header=[0,1],index_col=0,parse_dates=True,engine='openpyxl')
   df=get_required_columns(df)
+  
   if not df.empty:
     df=dates_bulk_shifted(df,shift_duration)
     df_dict[entity_type]=df
+
+entity_types_shifted=[]
+entity_types_shifted_df=[]
+for key in df_dict.keys():
+  entity_types_shifted.append(key)
+  entity_types_shifted_df.append(df_dict[key])
+entity_types_shifted=[ type+'_SHIFTED' for type in entity_types]
+
+
+
+writer = pd.ExcelWriter(r"C:\Users\rdandekar\Desktop\Prod_Prof_shifted.xlsx", engine='openpyxl')
+for entity, entity_df in zip(entity_types_shifted,entity_types_shifted_df):
+  entity_df.to_excel(writer,sheet_name=entity)
+writer.save()
+writer.close()
 exit()
 
 
