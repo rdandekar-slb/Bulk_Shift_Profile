@@ -167,7 +167,6 @@ def get_shift_duration(workbook):
     del wbk
     return None
 
-    
 def dates_bulk_shifted_rolledup(input_dataframe,days_to_shift,rollup):
 
   required_columns=input_dataframe.columns.values
