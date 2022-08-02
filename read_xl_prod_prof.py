@@ -236,9 +236,10 @@ writer = pd.ExcelWriter(r"C:\Users\rdandekar\Desktop\Prod_Prof_shifted.xlsx", en
 for key in df_dict:
   print(f'Writing {key} sheet...\n')
   df_dict[key].to_excel(writer,sheet_name=key)
-print('Finished writing all sheets\n')
+print('Finished writing all sheets\nSaving and closing file...\n')
 writer.save()
 writer.close()
+print('Closed file, exiting!\n')
 exit()
 
 
