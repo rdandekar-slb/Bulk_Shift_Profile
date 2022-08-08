@@ -202,13 +202,13 @@ def dates_bulk_shifted_rolledup(input_dataframe,days_to_shift,rollup):
 
 
 print("Hello World")
-shift_duration=get_shift_duration(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
+shift_duration=get_shift_duration(r"Prod_Prof.xlsx")
 if shift_duration is None:
   exit()
 entity_types=['USERDF','SOURCE','SEP','TANK','JOINT','WELL','INLGEN']
 df_dict={}
 print("\nLoading workbook...\n")
-wbk=xl.load_workbook(r"C:\Users\rdandekar\Desktop\Prod_Prof.xlsx")
+wbk=xl.load_workbook(r"Prod_Prof.xlsx")
 for entity_type in entity_types:
   print(f"Starting to process {entity_type} sheet\n")
   # input_df=pd.DataFrame()
@@ -231,7 +231,7 @@ for entity_type in entity_types:
   print(f"Finished processing {entity_type} sheet\n")
 
 print("\nWriting to workbook...\n\n")
-writer = pd.ExcelWriter(r"C:\Users\rdandekar\Desktop\Prod_Prof_shifted.xlsx", engine='openpyxl')
+writer = pd.ExcelWriter(r"Prod_Prof_shifted.xlsx", engine='openpyxl')
 for key in df_dict:
   print(f'Writing {key} sheet...\n')
   df_dict[key].to_excel(writer,sheet_name=key)
